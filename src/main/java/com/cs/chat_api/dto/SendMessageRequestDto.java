@@ -1,4 +1,4 @@
-package com.cd.chat_api.dto;
+package com.cs.chat_api.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

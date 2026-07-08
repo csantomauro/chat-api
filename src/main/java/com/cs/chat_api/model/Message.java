@@ -1,4 +1,4 @@
-package com.cd.chat_api.model;
+package com.cs.chat_api.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

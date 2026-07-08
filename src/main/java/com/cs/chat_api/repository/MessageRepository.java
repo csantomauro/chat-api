@@ -1,6 +1,6 @@
-package com.cd.chat_api.repository;
+package com.cs.chat_api.repository;
 
-import com.cd.chat_api.model.Message;
+import com.cs.chat_api.model.Message;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
