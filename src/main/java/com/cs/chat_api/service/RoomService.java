@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +32,32 @@ public class RoomService {
 
         Room saved =roomRepository.save(room);
         return toResponseDto(saved);
+    }
+
+    public RoomResponseDto getOrCreateDirectRoom(String usernameA, String usernameB) {
+        User userA = userRepository.findByUsername(usernameA)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + usernameA));
+        User userB = userRepository.findByUsername(usernameB)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + usernameB));
+
+        String directRoomName = buildDirectRoomName(usernameA, usernameB);
+
+        Room room = roomRepository.findByName(directRoomName)
+                .orElseGet(() -> {
+                    Room newRoom = new Room();
+                    newRoom.setName(directRoomName);
+                    newRoom.setDirect(true);
+                    newRoom.getMembers().add(userA);
+                    newRoom.getMembers().add(userB);
+                    return roomRepository.save(newRoom);
+                });
+
+        return toResponseDto(room);
+    }
+
+    private String buildDirectRoomName(String usernameA, String usernameB) {
+        List<String> sorted = Stream.of(usernameA, usernameB).sorted().toList();
+        return "dm:" + sorted.get(0) + ":" + sorted.get(1);
     }
 
     public RoomResponseDto joinRoom(Long roomId, String username){

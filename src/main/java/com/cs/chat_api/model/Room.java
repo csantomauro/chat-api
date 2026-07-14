@@ -27,6 +27,9 @@ public class Room {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private boolean direct = false;
+
     @ManyToMany
     @JoinTable(
             name = "room_members",

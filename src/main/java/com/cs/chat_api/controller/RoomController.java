@@ -29,4 +29,11 @@ public class RoomController {
     ) {
         return ResponseEntity.ok(roomservice.joinRoom(roomId, username));
     }
+
+    @PostMapping("/direct")
+    public ResponseEntity<RoomResponseDto> getOrCreateDirectRoom(
+            @RequestParam String userA,
+            @RequestParam String userB) {
+        return ResponseEntity.ok(roomservice.getOrCreateDirectRoom(userA, userB));
+    }
 }
