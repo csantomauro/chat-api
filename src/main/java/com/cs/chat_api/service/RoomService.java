@@ -34,6 +34,10 @@ public class RoomService {
         return toResponseDto(saved);
     }
 
+    public List<RoomResponseDto> getRooms() {
+        return roomRepository.findAll().stream().map(this::toResponseDto).toList();
+    }
+
     public RoomResponseDto getOrCreateDirectRoom(String usernameA, String usernameB) {
         User userA = userRepository.findByUsername(usernameA)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + usernameA));

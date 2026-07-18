@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Test Client</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+</head>
+<body>
+<h2>Chat API Test Client</h2>
+<p class="subtitle">A minimal client to try real-time messaging over WebSocket.</p>
+
+<div class="status">
+    <span id="statusDot" class="status-dot"></span>
+    <span id="statusText">Not connected</span>
+</div>
+
+<div>
+    <input id="username" placeholder="Your username" value="mario" />
+    <input id="roomId" placeholder="Room ID" value="1" />
+    <button onclick="connect()">Connect</button>
+</div>
+
+<div style="margin-top: 20px;">
+    <input id="messageContent" placeholder="Type a message..." style="width: 300px;" oninput="onTyping()" />
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+<h3>Messages:</h3>
+<div id="typingIndicator" style="font-style: italic; color: gray; height: 20px;"></div>
+<div id="messages" style="border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll;"></div>
+
+<script>
+    let stompClient = null;
+    let typingTimeout;
+
+    function setStatus(connected) {
+        document.getElementById('statusDot').classList.toggle('connected', connected);
+        document.getElementById('statusText').textContent = connected ? 'Connected' : 'Not connected';
+    }
+
+    function connect() {
+        if (stompClient && stompClient.active) {
+            stompClient.deactivate();
+        }
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = new StompJs.Client({
+            webSocketFactory: () => socket,
+            onConnect: () => {
+                setStatus(true);
+                const roomId = document.getElementById('roomId').value;
+
+                stompClient.subscribe('/topic/room/' + roomId, (message) => {
+                    const msg = JSON.parse(message.body);
+                    displayMessage(msg);
+                });
+
+                stompClient.subscribe('/topic/room/' + roomId + '/typing', (message) => {
+                    const event = JSON.parse(message.body);
+                    displayTyping(event);
+                });
+            },
+            onStompError: (frame) => {
+                console.error('Errore STOMP:', frame);
+                setStatus(false);
+            }
+        });
+        stompClient.activate();
+    }
+
+    function sendMessage() {
+        const content = document.getElementById('messageContent').value;
+        const username = document.getElementById('username').value;
+        const roomId = document.getElementById('roomId').value;
+
+        const request = {
+            content: content,
+            roomName: 'general',
+            senderUsername: username
+        };
+
+        stompClient.publish({
+            destination: '/app/chat.sendMessage',
+            body: JSON.stringify(request)
+        });
+
+        document.getElementById('messageContent').value = '';
+    }
+
+    function displayMessage(msg) {
+        const messagesDiv = document.getElementById('messages');
+        const p = document.createElement('p');
+        p.textContent = `[${msg.sentAt}] ${msg.senderUsername}: ${msg.content}`;
+        messagesDiv.appendChild(p);
+    }
+
+    function onTyping() {
+        sendTypingEvent(true);
+
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            sendTypingEvent(false);
+        }, 2000);
+    }
+
+    function displayTyping(event) {
+        const indicator = document.getElementById('typingIndicator');
+        if (event.typing) {
+            indicator.textContent = event.username + ' is typing...';
+        } else {
+            indicator.textContent = '';
+        }
+    }
+
+    function sendTypingEvent(isTyping) {
+        const username = document.getElementById('username').value;
+        const roomId = document.getElementById('roomId').value;
+
+        stompClient.publish({
+            destination: '/app/chat.typing',
+            body: JSON.stringify({ username: username, roomId: parseInt(roomId), typing: isTyping })
+        });
+    }
+</script>
+</body>
+</html>
